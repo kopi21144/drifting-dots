@@ -358,3 +358,63 @@ public final class DriftingDots {
             }
         }
 
+        private static double clamp01(double v) {
+            if (v < 0) return 0;
+            if (v > 1) return 1;
+            return v;
+        }
+    }
+
+    // ---------------------------------------------------------------------------
+    // DotMasterEvent — immutable event payload
+    // ---------------------------------------------------------------------------
+
+    public static final class DotMasterEvent {
+        private final DriftingDots source;
+        private final long tick;
+        private final DotField field;
+
+        public DotMasterEvent(DriftingDots source, long tick, DotField field) {
+            this.source = source;
+            this.tick = tick;
+            this.field = field;
+        }
+
+        public DriftingDots getSource() {
+            return source;
+        }
+
+        public long getTick() {
+            return tick;
+        }
+
+        public DotField getField() {
+            return field;
+        }
+    }
+
+    // ---------------------------------------------------------------------------
+    // DotMasterListener — callback interface
+    // ---------------------------------------------------------------------------
+
+    public interface DotMasterListener {
+        void onTick(DotMasterEvent event);
+        void onFrameRendered(BufferedImage frame);
+    }
+
+    // ---------------------------------------------------------------------------
+    // Preset configurations (all final / immutable-style)
+    // ---------------------------------------------------------------------------
+
+    public static final class Presets {
+        public static final double DRIFT_CALM = 0.0002;
+        public static final double DRIFT_MEDIUM = 0.0004127;
+        public static final double DRIFT_WILD = 0.0012;
+        public static final int SIZE_SMALL_W = 800;
+        public static final int SIZE_SMALL_H = 600;
+        public static final int SIZE_HD_W = 1920;
+        public static final int SIZE_HD_H = 1080;
+        public static final int SIZE_4K_W = 3840;
+        public static final int SIZE_4K_H = 2160;
+
+        private Presets() {
