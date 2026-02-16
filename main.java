@@ -298,3 +298,63 @@ public final class DriftingDots {
                 double u = (double) i / (double) Math.max(1, capacity);
                 double x = 0.2 + 0.6 * (0.5 + 0.5 * Math.sin(u * Math.PI * 4));
                 double y = 0.2 + 0.6 * (0.5 + 0.5 * Math.cos(u * Math.PI * 3));
+                double phase = u * Math.PI * 2;
+                dots.add(new Dot(x, y, phase, i, this.trailLength));
+            }
+        }
+
+        private DotField(List<Dot> dots, String seedA, String seedB, String seedC, int trailLength) {
+            this.dots = new ArrayList<>(dots);
+            this.seedA = seedA;
+            this.seedB = seedB;
+            this.seedC = seedC;
+            this.trailLength = trailLength;
+        }
+
+        public List<Dot> getDots() {
+            return new ArrayList<>(dots);
+        }
+
+        public int getDotCount() {
+            return dots.size();
+        }
+
+        public DotField tick(double driftScale, double phaseSpeed, long constructionTimeMs, long tickCount,
+                             MessageDigest digest, String driftOracle, String trailSalt) {
+            List<Dot> nextDots = new ArrayList<>(dots.size());
+            long t = constructionTimeMs + tickCount * 17L;
+            for (Dot d : dots) {
+                byte[] h = hash(digest, seedA, seedB, seedC, String.valueOf(d.getIndex()), String.valueOf(t), driftOracle);
+                double dx = (hashToUnit(h, 0) - 0.5) * driftScale;
+                double dy = (hashToUnit(h, 8) - 0.5) * driftScale;
+                double newPhase = d.getPhase() + phaseSpeed * (hashToInt(h, 4) % 1000) / 1000.0;
+                double newX = clamp01(d.getX() + dx);
+                double newY = clamp01(d.getY() + dy);
+                nextDots.add(d.withNewPosition(newX, newY, newPhase));
+            }
+            return new DotField(nextDots, seedA, seedB, seedC, trailLength);
+        }
+
+        public void draw(Graphics2D g, int width, int height, String paletteAnchor, MessageDigest digest) {
+            for (Dot d : dots) {
+                byte[] h = hash(digest, paletteAnchor, String.valueOf(d.getIndex()), String.valueOf(d.getPhase()));
+                Color c = hashToColor(h, paletteAnchor);
+                g.setColor(c);
+                int px = (int) (d.getX() * width);
+                int py = (int) (d.getY() * height);
+                int radius = 2 + (hashToInt(h, 0) % 3);
+                g.fillOval(px - radius, py - radius, radius * 2, radius * 2);
+                for (int i = d.getTrailLength() - 1; i >= 0; i--) {
+                    double tx = d.getTrailX(i);
+                    double ty = d.getTrailY(i);
+                    int trailAlpha = 80 - (i * 70 / Math.max(1, d.getTrailLength()));
+                    if (trailAlpha < 5) trailAlpha = 5;
+                    Color trailColor = new Color(c.getRed(), c.getGreen(), c.getBlue(), trailAlpha);
+                    g.setColor(trailColor);
+                    int txp = (int) (tx * width);
+                    int typ = (int) (ty * height);
+                    g.fillOval(txp - 1, typ - 1, 2, 2);
+                }
+            }
+        }
+
