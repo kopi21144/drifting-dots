@@ -238,3 +238,63 @@ public final class DriftingDots {
         public double getY() {
             return y;
         }
+
+        public double getPhase() {
+            return phase;
+        }
+
+        public int getIndex() {
+            return index;
+        }
+
+        public int getTrailLength() {
+            return trailLength;
+        }
+
+        public double getTrailX(int i) {
+            if (i < 0 || i >= trailLength) return x;
+            int j = (trailHead - 1 - i + trailLength * 2) % trailLength;
+            return trailX[j];
+        }
+
+        public double getTrailY(int i) {
+            if (i < 0 || i >= trailLength) return y;
+            int j = (trailHead - 1 - i + trailLength * 2) % trailLength;
+            return trailY[j];
+        }
+
+        public Dot withNewPosition(double newX, double newY, double newPhase) {
+            Dot next = new Dot(newX, newY, newPhase, index, trailLength);
+            for (int i = 0; i < trailLength; i++) {
+                next.trailX[i] = this.trailX[i];
+                next.trailY[i] = this.trailY[i];
+            }
+            next.trailHead = this.trailHead;
+            next.trailX[next.trailHead] = newX;
+            next.trailY[next.trailHead] = newY;
+            next.trailHead = (next.trailHead + 1) % trailLength;
+            return next;
+        }
+    }
+
+    // ---------------------------------------------------------------------------
+    // DotField — immutable snapshot of all dots
+    // ---------------------------------------------------------------------------
+
+    public static final class DotField {
+        private final List<Dot> dots;
+        private final String seedA;
+        private final String seedB;
+        private final String seedC;
+        private final int trailLength;
+
+        public DotField(int capacity, int trailLength, String seedA, String seedB, String seedC) {
+            this.trailLength = Math.max(1, trailLength);
+            this.seedA = seedA;
+            this.seedB = seedB;
+            this.seedC = seedC;
+            this.dots = new ArrayList<>(capacity);
+            for (int i = 0; i < capacity; i++) {
+                double u = (double) i / (double) Math.max(1, capacity);
+                double x = 0.2 + 0.6 * (0.5 + 0.5 * Math.sin(u * Math.PI * 4));
+                double y = 0.2 + 0.6 * (0.5 + 0.5 * Math.cos(u * Math.PI * 3));
