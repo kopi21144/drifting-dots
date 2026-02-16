@@ -118,3 +118,63 @@ public final class DriftingDots {
     }
 
     private void fireRenderEvent(BufferedImage frame) {
+        for (DotMasterListener l : listeners) {
+            l.onFrameRendered(frame);
+        }
+    }
+
+    public void tick() {
+        field = field.tick(driftScale, PHASE_SPEED, constructionTimeMs, tickCount, digest, DRIFT_ORACLE, TRAIL_HASH_SALT);
+        tickCount++;
+        fireTickEvent(tickCount, field);
+    }
+
+    public void tick(int n) {
+        for (int i = 0; i < n; i++) {
+            tick();
+        }
+    }
+
+    public BufferedImage renderFrame(boolean clearBackground, Color backgroundColor) {
+        BufferedImage img = new BufferedImage(canvasWidth, canvasHeight, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g = img.createGraphics();
+        try {
+            if (clearBackground && backgroundColor != null) {
+                g.setColor(backgroundColor);
+                g.fillRect(0, 0, canvasWidth, canvasHeight);
+            }
+            field.draw(g, canvasWidth, canvasHeight, PALETTE_ANCHOR, digest);
+        } finally {
+            g.dispose();
+        }
+        fireRenderEvent(img);
+        return img;
+    }
+
+    public BufferedImage renderFrame() {
+        return renderFrame(true, new Color(0x0a, 0x0a, 0x12, 255));
+    }
+
+    public byte[] exportFramePng(BufferedImage frame) throws IOException {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        ImageIO.write(frame, "png", out);
+        return out.toByteArray();
+    }
+
+    public byte[] renderAndExportPng() throws IOException {
+        BufferedImage frame = renderFrame();
+        return exportFramePng(frame);
+    }
+
+    public static byte[] hash(MessageDigest digest, String... inputs) {
+        digest.reset();
+        for (String s : inputs) {
+            if (s != null) {
+                digest.update(s.getBytes(StandardCharsets.UTF_8));
+            }
+        }
+        return digest.digest();
+    }
+
+    public static int hashToInt(byte[] hash, int offset) {
+        if (hash == null || offset < 0 || offset + 4 > hash.length) {
