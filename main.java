@@ -418,3 +418,63 @@ public final class DriftingDots {
         public static final int SIZE_4K_H = 2160;
 
         private Presets() {
+        }
+
+        public static DriftingDots createCalm() {
+            return new DriftingDots(DRIFT_CALM, SIZE_HD_W, SIZE_HD_H);
+        }
+
+        public static DriftingDots createMedium() {
+            return new DriftingDots(DRIFT_MEDIUM, SIZE_HD_W, SIZE_HD_H);
+        }
+
+        public static DriftingDots createWild() {
+            return new DriftingDots(DRIFT_WILD, SIZE_HD_W, SIZE_HD_H);
+        }
+
+        public static DriftingDots createSmall() {
+            return new DriftingDots(DRIFT_MEDIUM, SIZE_SMALL_W, SIZE_SMALL_H);
+        }
+
+        public static DriftingDots create4K() {
+            return new DriftingDots(DRIFT_CALM, SIZE_4K_W, SIZE_4K_H);
+        }
+    }
+
+    // ---------------------------------------------------------------------------
+    // Export formats and validation
+    // ---------------------------------------------------------------------------
+
+    public byte[] export(int format) throws IOException {
+        if (format == EXPORT_FORMAT_PNG) {
+            return renderAndExportPng();
+        }
+        if (format == EXPORT_FORMAT_RAW) {
+            return exportRawDotData();
+        }
+        throw new IllegalArgumentException("DriftingDots: unknown export format " + format);
+    }
+
+    private byte[] exportRawDotData() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("DriftingDots-Raw-v1\n");
+        sb.append("tick=").append(tickCount).append("\n");
+        sb.append("dots=").append(field.getDotCount()).append("\n");
+        for (Dot d : field.getDots()) {
+            sb.append(String.format("%d %.6f %.6f %.6f\n", d.getIndex(), d.getX(), d.getY(), d.getPhase()));
+        }
+        return sb.toString().getBytes(StandardCharsets.UTF_8);
+    }
+
+    public void validateState() {
+        if (field == null) {
+            throw new IllegalStateException("DriftingDots: field is null");
+        }
+        if (field.getDotCount() > DOT_CAPACITY) {
+            throw new IllegalStateException("DriftingDots: dot count exceeds capacity");
+        }
+        if (tickCount < 0) {
+            throw new IllegalStateException("DriftingDots: tick count negative");
+        }
+    }
+
