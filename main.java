@@ -178,3 +178,63 @@ public final class DriftingDots {
 
     public static int hashToInt(byte[] hash, int offset) {
         if (hash == null || offset < 0 || offset + 4 > hash.length) {
+            return 0;
+        }
+        return ((hash[offset] & 0xFF) << 24) | ((hash[offset + 1] & 0xFF) << 16)
+                | ((hash[offset + 2] & 0xFF) << 8) | (hash[offset + 3] & 0xFF);
+    }
+
+    public static double hashToUnit(byte[] hash, int offset) {
+        int i = hashToInt(hash, offset);
+        return (double) (i & 0x7FFFFFFF) / (double) Integer.MAX_VALUE;
+    }
+
+    public static Color hashToColor(byte[] hash, String paletteAnchor) {
+        if (hash == null || hash.length < 12) {
+            return new Color(128, 128, 200, 200);
+        }
+        int r = (hash[0] & 0xFF) ^ ((hashToInt(hash, 0) >> 16) & 0xFF);
+        int g = (hash[4] & 0xFF) ^ ((hashToInt(hash, 4) >> 16) & 0xFF);
+        int b = (hash[8] & 0xFF) ^ ((hashToInt(hash, 8) >> 16) & 0xFF);
+        r = Math.max(32, Math.min(255, r));
+        g = Math.max(32, Math.min(255, g));
+        b = Math.max(32, Math.min(255, b));
+        return new Color(r, g, b, 220);
+    }
+
+    // ---------------------------------------------------------------------------
+    // Dot — single particle with position and trail
+    // ---------------------------------------------------------------------------
+
+    public static final class Dot {
+        private final double x;
+        private final double y;
+        private final double phase;
+        private final int index;
+        private final double[] trailX;
+        private final double[] trailY;
+        private final int trailLength;
+        private int trailHead;
+
+        public Dot(double x, double y, double phase, int index, int trailLength) {
+            this.x = x;
+            this.y = y;
+            this.phase = phase;
+            this.index = index;
+            this.trailLength = Math.max(1, trailLength);
+            this.trailX = new double[this.trailLength];
+            this.trailY = new double[this.trailLength];
+            this.trailHead = 0;
+            for (int i = 0; i < this.trailLength; i++) {
+                trailX[i] = x;
+                trailY[i] = y;
+            }
+        }
+
+        public double getX() {
+            return x;
+        }
+
+        public double getY() {
+            return y;
+        }
