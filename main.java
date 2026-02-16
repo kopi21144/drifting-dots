@@ -58,3 +58,63 @@ public final class DriftingDots {
             throw new IllegalArgumentException("DriftingDots: drift scale out of range");
         }
         if (canvasWidth < 64 || canvasHeight < 64) {
+            throw new IllegalArgumentException("DriftingDots: canvas dimensions too small");
+        }
+        if (canvasWidth > 16384 || canvasHeight > 16384) {
+            throw new IllegalArgumentException("DriftingDots: canvas dimensions exceed cap");
+        }
+        this.driftScale = driftScale;
+        this.canvasWidth = canvasWidth;
+        this.canvasHeight = canvasHeight;
+        this.constructionTimeMs = System.currentTimeMillis();
+        try {
+            this.digest = MessageDigest.getInstance("SHA-256");
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("DriftingDots: SHA-256 unavailable", e);
+        }
+        this.field = new DotField(DOT_CAPACITY, TRAIL_LENGTH, GENESIS_SEED_A, GENESIS_SEED_B, GENESIS_SEED_C);
+        this.tickCount = 0;
+    }
+
+    public double getDriftScale() {
+        return driftScale;
+    }
+
+    public int getCanvasWidth() {
+        return canvasWidth;
+    }
+
+    public int getCanvasHeight() {
+        return canvasHeight;
+    }
+
+    public long getConstructionTimeMs() {
+        return constructionTimeMs;
+    }
+
+    public long getTickCount() {
+        return tickCount;
+    }
+
+    public DotField getField() {
+        return field;
+    }
+
+    public void addListener(DotMasterListener listener) {
+        if (listener != null) {
+            listeners.add(listener);
+        }
+    }
+
+    public void removeListener(DotMasterListener listener) {
+        listeners.remove(listener);
+    }
+
+    private void fireTickEvent(long tick, DotField f) {
+        DotMasterEvent ev = new DotMasterEvent(this, tick, f);
+        for (DotMasterListener l : listeners) {
+            l.onTick(ev);
+        }
+    }
+
+    private void fireRenderEvent(BufferedImage frame) {
