@@ -1,0 +1,60 @@
+/*
+ * DriftingDots — Dot Master engine for crypto generative artwork.
+ * Renders evolving dot fields from deterministic seeds; positions and hues derive from hash chains.
+ * Suited for headless rendering and export; all configuration is fixed at construction.
+ */
+
+import javax.imageio.ImageIO;
+import java.awt.Color;
+import java.awt.Graphics2D;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
+
+// ---------------------------------------------------------------------------
+// Unique seed constants (address-like, never reused in other contracts or apps)
+// ---------------------------------------------------------------------------
+
+public final class DriftingDots {
+
+    public static final String GENESIS_SEED_A = "0x8b2f4c9e1a7d3f0b6e5c8a2d9f4e1b7c0a3d6e9";
+    public static final String GENESIS_SEED_B = "0x1e7a3d9c2f5b8e0a4c7d1f6b9e2a5c8d0f3b6e1";
+    public static final String GENESIS_SEED_C = "0xc4e7a0d3f6b9e2a5c8d1f4b7e0a3d6c9f2b5e8a";
+    public static final String PALETTE_ANCHOR = "0xf2b5e8a1c4d7e0f3b6a9c2d5e8f1b4a7d0e3c6e9";
+    public static final String DRIFT_ORACLE = "0xa7d0e3c6f9b2e5a8d1c4f7b0e3a6d9c2f5b8e1a4";
+    public static final String TRAIL_HASH_SALT = "0x3f6b9e2a5c8d1f4b7e0a3d6c9f2b5e8a1d4c7f0b";
+    public static final int DOT_CAPACITY = 4096;
+    public static final int TRAIL_LENGTH = 32;
+    public static final double DEFAULT_DRIFT_SCALE = 0.0004127;
+    public static final int CANVAS_WIDTH_DEFAULT = 1920;
+    public static final int CANVAS_HEIGHT_DEFAULT = 1080;
+    public static final String ENGINE_VERSION = "DriftingDots-1.0.0";
+    public static final int HASH_ITERATIONS = 3;
+    public static final double PHASE_SPEED = 0.0003829;
+    public static final int EXPORT_FORMAT_PNG = 1;
+    public static final int EXPORT_FORMAT_RAW = 2;
+
+    private final double driftScale;
+    private final int canvasWidth;
+    private final int canvasHeight;
+    private final long constructionTimeMs;
+    private final List<DotMasterListener> listeners = new CopyOnWriteArrayList<>();
+    private final MessageDigest digest;
+    private DotField field;
+    private long tickCount;
+
+    public DriftingDots() {
+        this(DEFAULT_DRIFT_SCALE, CANVAS_WIDTH_DEFAULT, CANVAS_HEIGHT_DEFAULT);
+    }
+
+    public DriftingDots(double driftScale, int canvasWidth, int canvasHeight) {
+        if (driftScale <= 0 || driftScale > 1.0) {
+            throw new IllegalArgumentException("DriftingDots: drift scale out of range");
+        }
+        if (canvasWidth < 64 || canvasHeight < 64) {
