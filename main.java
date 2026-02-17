@@ -958,3 +958,50 @@ public final class DriftingDots {
         }
 
         public String getOutputDir() {
+            return outputDir;
+        }
+
+        public static AnimationConfig defaults() {
+            return new AnimationConfig(60, 2, RenderMode.CORE_AND_TRAIL, new Color(0x0a, 0x0a, 0x12), ".");
+        }
+    }
+
+    // ---------------------------------------------------------------------------
+    // Additional genesis constants (unique, never reused elsewhere)
+    // ---------------------------------------------------------------------------
+
+    public static final String FALLBACK_ORACLE = "0x5e8a1d4c7f0b3e6a9c2d5f8b1e4a7d0c3f6b9e2";
+    public static final String RENDER_SALT = "0x9c2d5f8b1e4a7d0c3f6b9e2a5c8d1f4b7e0a3d6";
+    public static final long TICK_EPOCH_OFFSET = 1738281600000L;
+    public static final int DEFAULT_TRAIL_CAP = 64;
+    public static final double MAX_PHASE = Math.PI * 2.0;
+
+    // ---------------------------------------------------------------------------
+    // CLI / Main entry
+    // ---------------------------------------------------------------------------
+
+    public static void main(String[] args) {
+        DriftingDots engine = Presets.createMedium();
+        engine.addListener(new DotMasterListener() {
+            @Override
+            public void onTick(DotMasterEvent event) {
+                if (event.getTick() % 100 == 0) {
+                    System.out.println("DotMaster tick " + event.getTick());
+                }
+            }
+
+            @Override
+            public void onFrameRendered(BufferedImage frame) {
+            }
+        });
+        engine.tick(50);
+        try {
+            byte[] png = engine.renderAndExportPng();
+            java.nio.file.Files.write(java.nio.file.Paths.get("drifting-dots-frame.png"), png);
+            System.out.println("Wrote drifting-dots-frame.png (" + png.length + " bytes)");
+        } catch (IOException e) {
+            System.err.println("Export failed: " + e.getMessage());
+        }
+        System.out.println("Engine: " + engine.getEngineVersion() + " fingerprint: " + engine.getGenesisFingerprint());
+    }
+}
