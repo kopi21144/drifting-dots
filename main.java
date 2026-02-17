@@ -898,3 +898,63 @@ public final class DriftingDots {
     // ---------------------------------------------------------------------------
     // Factory with validation (mainnet-safe defaults)
     // ---------------------------------------------------------------------------
+
+    public static final class Factory {
+        private static final double SAFE_DRIFT = 0.0004127;
+        private static final int SAFE_WIDTH = 1920;
+        private static final int SAFE_HEIGHT = 1080;
+
+        public static DriftingDots createSafe() {
+            Bounds.checkDrift(SAFE_DRIFT);
+            Bounds.checkCanvas(SAFE_WIDTH, SAFE_HEIGHT);
+            return new DriftingDots(SAFE_DRIFT, SAFE_WIDTH, SAFE_HEIGHT);
+        }
+
+        public static DriftingDots createSafe(int width, int height) {
+            Bounds.checkCanvas(width, height);
+            return new DriftingDots(SAFE_DRIFT, width, height);
+        }
+
+        public static DriftingDots createSafe(double drift, int width, int height) {
+            Bounds.checkDrift(drift);
+            Bounds.checkCanvas(width, height);
+            return new DriftingDots(drift, width, height);
+        }
+    }
+
+    // ---------------------------------------------------------------------------
+    // AnimationConfig — immutable config for batch animation (no user fill-in)
+    // ---------------------------------------------------------------------------
+
+    public static final class AnimationConfig {
+        private final int totalFrames;
+        private final int ticksPerFrame;
+        private final RenderMode renderMode;
+        private final Color backgroundColor;
+        private final String outputDir;
+
+        public AnimationConfig(int totalFrames, int ticksPerFrame, RenderMode renderMode, Color backgroundColor, String outputDir) {
+            this.totalFrames = Math.min(1024, Math.max(1, totalFrames));
+            this.ticksPerFrame = Math.min(100, Math.max(1, ticksPerFrame));
+            this.renderMode = renderMode != null ? renderMode : RenderMode.CORE_AND_TRAIL;
+            this.backgroundColor = backgroundColor != null ? backgroundColor : new Color(0x0a, 0x0a, 0x12, 255);
+            this.outputDir = outputDir != null ? outputDir : ".";
+        }
+
+        public int getTotalFrames() {
+            return totalFrames;
+        }
+
+        public int getTicksPerFrame() {
+            return ticksPerFrame;
+        }
+
+        public RenderMode getRenderMode() {
+            return renderMode;
+        }
+
+        public Color getBackgroundColor() {
+            return backgroundColor;
+        }
+
+        public String getOutputDir() {
