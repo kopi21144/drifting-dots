@@ -778,3 +778,63 @@ public final class DriftingDots {
         public static final double MAX_DRIFT = 0.01;
         public static final int MIN_CANVAS = 64;
         public static final int MAX_CANVAS = 16384;
+        public static final int MIN_DOTS = 1;
+        public static final int MAX_DOTS = 8192;
+
+        public static void checkDrift(double v) {
+            if (v < MIN_DRIFT || v > MAX_DRIFT) {
+                throw new IllegalArgumentException("DriftingDots: drift out of bounds");
+            }
+        }
+
+        public static void checkCanvas(int w, int h) {
+            if (w < MIN_CANVAS || h < MIN_CANVAS || w > MAX_CANVAS || h > MAX_CANVAS) {
+                throw new IllegalArgumentException("DriftingDots: canvas dimensions out of bounds");
+            }
+        }
+
+        public static void checkDotCount(int n) {
+            if (n < MIN_DOTS || n > MAX_DOTS) {
+                throw new IllegalArgumentException("DriftingDots: dot count out of bounds");
+            }
+        }
+    }
+
+    // ---------------------------------------------------------------------------
+    // FrameSequence — in-memory frame buffer for export
+    // ---------------------------------------------------------------------------
+
+    public static final class FrameSequence {
+        private final List<BufferedImage> frames = new ArrayList<>();
+        private static final int MAX_FRAMES = 1024;
+
+        public void add(BufferedImage frame) {
+            if (frames.size() >= MAX_FRAMES) {
+                throw new IllegalStateException("DriftingDots: frame sequence cap reached");
+            }
+            frames.add(frame);
+        }
+
+        public int size() {
+            return frames.size();
+        }
+
+        public BufferedImage get(int index) {
+            return frames.get(index);
+        }
+
+        public void writeToDirectory(String pathPrefix) throws IOException {
+            java.io.File dir = new java.io.File(pathPrefix).getParentFile();
+            if (dir != null && !dir.exists()) {
+                dir.mkdirs();
+            }
+            for (int i = 0; i < frames.size(); i++) {
+                String path = pathPrefix + "_" + String.format("%05d", i) + ".png";
+                ImageIO.write(frames.get(i), "png", new java.io.File(path));
+            }
+        }
+    }
+
+    // ---------------------------------------------------------------------------
+    // Stats — read-only snapshot of engine stats (no "readonly" keyword; use final)
+    // ---------------------------------------------------------------------------
