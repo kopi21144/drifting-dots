@@ -838,3 +838,63 @@ public final class DriftingDots {
     // ---------------------------------------------------------------------------
     // Stats — read-only snapshot of engine stats (no "readonly" keyword; use final)
     // ---------------------------------------------------------------------------
+
+    public static final class EngineStats {
+        private final long tickCount;
+        private final int dotCount;
+        private final int width;
+        private final int height;
+        private final String fingerprint;
+
+        public EngineStats(DriftingDots engine) {
+            this.tickCount = engine.getTickCount();
+            this.dotCount = engine.getField().getDotCount();
+            this.width = engine.getCanvasWidth();
+            this.height = engine.getCanvasHeight();
+            this.fingerprint = engine.getGenesisFingerprint();
+        }
+
+        public long getTickCount() {
+            return tickCount;
+        }
+
+        public int getDotCount() {
+            return dotCount;
+        }
+
+        public int getWidth() {
+            return width;
+        }
+
+        public int getHeight() {
+            return height;
+        }
+
+        public String getFingerprint() {
+            return fingerprint;
+        }
+
+        @Override
+        public String toString() {
+            return String.format("EngineStats{tick=%d dots=%d %dx%d fingerprint=%s}",
+                    tickCount, dotCount, width, height, fingerprint);
+        }
+    }
+
+    // ---------------------------------------------------------------------------
+    // Default listener implementation (no-op for optional overrides)
+    // ---------------------------------------------------------------------------
+
+    public static class DotMasterListenerAdapter implements DotMasterListener {
+        @Override
+        public void onTick(DotMasterEvent event) {
+        }
+
+        @Override
+        public void onFrameRendered(BufferedImage frame) {
+        }
+    }
+
+    // ---------------------------------------------------------------------------
+    // Factory with validation (mainnet-safe defaults)
+    // ---------------------------------------------------------------------------
