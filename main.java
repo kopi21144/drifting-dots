@@ -538,3 +538,63 @@ public final class DriftingDots {
     // ---------------------------------------------------------------------------
     // Color palette derived from PALETTE_ANCHOR (deterministic)
     // ---------------------------------------------------------------------------
+
+    public static final class Palette {
+        public static final int PALETTE_SIZE = 16;
+        private final Color[] colors;
+
+        public Palette(MessageDigest digest, String anchor) {
+            this.colors = new Color[PALETTE_SIZE];
+            for (int i = 0; i < PALETTE_SIZE; i++) {
+                byte[] h = hash(digest, anchor, String.valueOf(i));
+                colors[i] = hashToColor(h, anchor);
+            }
+        }
+
+        public Color get(int index) {
+            if (index < 0 || index >= PALETTE_SIZE) {
+                return colors[0];
+            }
+            return colors[index];
+        }
+
+        public int size() {
+            return PALETTE_SIZE;
+        }
+    }
+
+    // ---------------------------------------------------------------------------
+    // RenderMode — how dots are drawn (names unique to this engine)
+    // ---------------------------------------------------------------------------
+
+    public enum RenderMode {
+        SOLID_CORE,
+        TRAIL_ONLY,
+        CORE_AND_TRAIL,
+        PULSE_RINGS,
+        GRADIENT_FADE
+    }
+
+    // ---------------------------------------------------------------------------
+    // Advanced renderer with mode selection
+    // ---------------------------------------------------------------------------
+
+    public static final class DotMasterRenderer {
+        private final int width;
+        private final int height;
+        private final RenderMode mode;
+        private final MessageDigest digest;
+        private final String paletteAnchor;
+
+        public DotMasterRenderer(int width, int height, RenderMode mode, MessageDigest digest, String paletteAnchor) {
+            this.width = width;
+            this.height = height;
+            this.mode = mode;
+            this.digest = digest;
+            this.paletteAnchor = paletteAnchor;
+        }
+
+        public BufferedImage render(DotField field, Color background) {
+            BufferedImage img = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+            Graphics2D g = img.createGraphics();
+            try {
