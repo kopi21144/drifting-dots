@@ -598,3 +598,63 @@ public final class DriftingDots {
             BufferedImage img = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
             Graphics2D g = img.createGraphics();
             try {
+                if (background != null) {
+                    g.setColor(background);
+                    g.fillRect(0, 0, width, height);
+                }
+                switch (mode) {
+                    case SOLID_CORE:
+                        renderSolidCore(g, field);
+                        break;
+                    case TRAIL_ONLY:
+                        renderTrailOnly(g, field);
+                        break;
+                    case CORE_AND_TRAIL:
+                        renderCoreAndTrail(g, field);
+                        break;
+                    case PULSE_RINGS:
+                        renderPulseRings(g, field);
+                        break;
+                    case GRADIENT_FADE:
+                        renderGradientFade(g, field);
+                        break;
+                    default:
+                        renderCoreAndTrail(g, field);
+                }
+            } finally {
+                g.dispose();
+            }
+            return img;
+        }
+
+        private void renderSolidCore(Graphics2D g, DotField field) {
+            for (Dot d : field.getDots()) {
+                byte[] h = hash(digest, paletteAnchor, String.valueOf(d.getIndex()));
+                Color c = hashToColor(h, paletteAnchor);
+                g.setColor(c);
+                int px = (int) (d.getX() * width);
+                int py = (int) (d.getY() * height);
+                int r = 3 + (hashToInt(h, 0) % 4);
+                g.fillOval(px - r, py - r, r * 2, r * 2);
+            }
+        }
+
+        private void renderTrailOnly(Graphics2D g, DotField field) {
+            for (Dot d : field.getDots()) {
+                byte[] h = hash(digest, paletteAnchor, String.valueOf(d.getIndex()));
+                Color c = hashToColor(h, paletteAnchor);
+                for (int i = d.getTrailLength() - 1; i >= 0; i--) {
+                    int alpha = 255 - (i * 250 / Math.max(1, d.getTrailLength()));
+                    if (alpha < 10) alpha = 10;
+                    g.setColor(new Color(c.getRed(), c.getGreen(), c.getBlue(), alpha));
+                    double tx = d.getTrailX(i);
+                    double ty = d.getTrailY(i);
+                    int rad = 1 + (i % 2);
+                    g.fillOval((int) (tx * width) - rad, (int) (ty * height) - rad, rad * 2, rad * 2);
+                }
+            }
+        }
+
+        private void renderCoreAndTrail(Graphics2D g, DotField field) {
+            field.draw(g, width, height, paletteAnchor, digest);
+        }
