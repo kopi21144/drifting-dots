@@ -658,3 +658,63 @@ public final class DriftingDots {
         private void renderCoreAndTrail(Graphics2D g, DotField field) {
             field.draw(g, width, height, paletteAnchor, digest);
         }
+
+        private void renderPulseRings(Graphics2D g, DotField field) {
+            for (Dot d : field.getDots()) {
+                byte[] h = hash(digest, paletteAnchor, String.valueOf(d.getIndex()), String.valueOf(d.getPhase()));
+                Color c = hashToColor(h, paletteAnchor);
+                int px = (int) (d.getX() * width);
+                int py = (int) (d.getY() * height);
+                for (int ring = 3; ring >= 0; ring--) {
+                    int alpha = 60 - ring * 15;
+                    if (alpha < 5) alpha = 5;
+                    g.setColor(new Color(c.getRed(), c.getGreen(), c.getBlue(), alpha));
+                    int rad = 8 + ring * 6 + (hashToInt(h, ring * 2) % 4);
+                    g.drawOval(px - rad, py - rad, rad * 2, rad * 2);
+                }
+                g.setColor(c);
+                g.fillOval(px - 2, py - 2, 4, 4);
+            }
+        }
+
+        private void renderGradientFade(Graphics2D g, DotField field) {
+            for (Dot d : field.getDots()) {
+                byte[] h = hash(digest, paletteAnchor, String.valueOf(d.getIndex()));
+                for (int i = d.getTrailLength() - 1; i >= 0; i--) {
+                    double t = (double) i / Math.max(1, d.getTrailLength());
+                    int r = (int) (hashToInt(h, 0) % 256);
+                    int gr = (int) (hashToInt(h, 4) % 256);
+                    int b = (int) (hashToInt(h, 8) % 256);
+                    int alpha = (int) (220 * (1.0 - t));
+                    if (alpha < 5) alpha = 5;
+                    g.setColor(new Color(r, gr, b, alpha));
+                    int txp = (int) (d.getTrailX(i) * width);
+                    int typ = (int) (d.getTrailY(i) * height);
+                    g.fillOval(txp - 2, typ - 2, 4, 4);
+                }
+                Color c = hashToColor(h, paletteAnchor);
+                g.setColor(c);
+                g.fillOval((int) (d.getX() * width) - 3, (int) (d.getY() * height) - 3, 6, 6);
+            }
+        }
+    }
+
+    // ---------------------------------------------------------------------------
+    // Timeline — fixed keyframes for deterministic replay
+    // ---------------------------------------------------------------------------
+
+    public static final class Timeline {
+        private final List<Long> keyframeTicks = new ArrayList<>();
+        private final List<Double> keyframeDriftMultipliers = new ArrayList<>();
+        private static final int MAX_KEYFRAMES = 128;
+
+        public Timeline() {
+        }
+
+        public void addKeyframe(long tick, double driftMultiplier) {
+            if (keyframeTicks.size() >= MAX_KEYFRAMES) {
+                throw new IllegalStateException("DriftingDots: timeline keyframe cap reached");
+            }
+            keyframeTicks.add(tick);
+            keyframeDriftMultipliers.add(driftMultiplier);
+        }
