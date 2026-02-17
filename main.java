@@ -718,3 +718,63 @@ public final class DriftingDots {
             keyframeTicks.add(tick);
             keyframeDriftMultipliers.add(driftMultiplier);
         }
+
+        public double getDriftMultiplierAt(long tick) {
+            if (keyframeTicks.isEmpty()) return 1.0;
+            int i = 0;
+            while (i < keyframeTicks.size() && keyframeTicks.get(i) <= tick) i++;
+            if (i == 0) return keyframeDriftMultipliers.get(0);
+            if (i >= keyframeTicks.size()) return keyframeDriftMultipliers.get(keyframeDriftMultipliers.size() - 1);
+            long t0 = keyframeTicks.get(i - 1);
+            long t1 = keyframeTicks.get(i);
+            double m0 = keyframeDriftMultipliers.get(i - 1);
+            double m1 = keyframeDriftMultipliers.get(i);
+            double frac = (double) (tick - t0) / (double) Math.max(1, t1 - t0);
+            return m0 + frac * (m1 - m0);
+        }
+
+        public int getKeyframeCount() {
+            return keyframeTicks.size();
+        }
+    }
+
+    // ---------------------------------------------------------------------------
+    // SeedDeriver — deterministic sub-seeds from master seeds (unique naming)
+    // ---------------------------------------------------------------------------
+
+    public static final class SeedDeriver {
+        private final MessageDigest digest;
+        private final String masterA;
+        private final String masterB;
+
+        public SeedDeriver(MessageDigest digest, String masterA, String masterB) {
+            this.digest = digest;
+            this.masterA = masterA;
+            this.masterB = masterB;
+        }
+
+        public byte[] derive(String label, long nonce) {
+            return hash(digest, masterA, masterB, label, String.valueOf(nonce));
+        }
+
+        public double deriveUnit(String label, long nonce, int byteOffset) {
+            byte[] h = derive(label, nonce);
+            return hashToUnit(h, byteOffset % Math.max(1, h.length - 4));
+        }
+
+        public int deriveInt(String label, long nonce, int bound) {
+            byte[] h = derive(label, nonce);
+            int v = hashToInt(h, 0) & 0x7FFFFFFF;
+            return bound <= 0 ? 0 : (v % bound);
+        }
+    }
+
+    // ---------------------------------------------------------------------------
+    // Bounds checker — safe for mainnet-style invariants
+    // ---------------------------------------------------------------------------
+
+    public static final class Bounds {
+        public static final double MIN_DRIFT = 0.00001;
+        public static final double MAX_DRIFT = 0.01;
+        public static final int MIN_CANVAS = 64;
+        public static final int MAX_CANVAS = 16384;
