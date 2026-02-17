@@ -478,3 +478,63 @@ public final class DriftingDots {
         }
     }
 
+    public String getEngineVersion() {
+        return ENGINE_VERSION;
+    }
+
+    public String getGenesisFingerprint() {
+        return String.format("%s-%s-%s-%d",
+                GENESIS_SEED_A.substring(0, 10),
+                GENESIS_SEED_B.substring(0, 10),
+                GENESIS_SEED_C.substring(0, 10),
+                constructionTimeMs
+        );
+    }
+
+    // ---------------------------------------------------------------------------
+    // Batch runner for headless animation export
+    // ---------------------------------------------------------------------------
+
+    public static class BatchRunner {
+        private final DriftingDots engine;
+        private final int frames;
+        private final int ticksPerFrame;
+        private final String outputPathPrefix;
+
+        public BatchRunner(DriftingDots engine, int frames, int ticksPerFrame, String outputPathPrefix) {
+            this.engine = engine;
+            this.frames = Math.max(1, frames);
+            this.ticksPerFrame = Math.max(1, ticksPerFrame);
+            this.outputPathPrefix = outputPathPrefix != null ? outputPathPrefix : "frame";
+        }
+
+        public int getFrames() {
+            return frames;
+        }
+
+        public int getTicksPerFrame() {
+            return ticksPerFrame;
+        }
+
+        public void run() throws IOException {
+            for (int f = 0; f < frames; f++) {
+                engine.tick(ticksPerFrame);
+                BufferedImage img = engine.renderFrame();
+                String path = outputPathPrefix + "_" + String.format("%05d", f) + ".png";
+                ImageIO.write(img, "png", new java.io.File(path));
+            }
+        }
+
+        public List<BufferedImage> runInMemory() {
+            List<BufferedImage> list = new ArrayList<>(frames);
+            for (int f = 0; f < frames; f++) {
+                engine.tick(ticksPerFrame);
+                list.add(engine.renderFrame());
+            }
+            return list;
+        }
+    }
+
+    // ---------------------------------------------------------------------------
+    // Color palette derived from PALETTE_ANCHOR (deterministic)
+    // ---------------------------------------------------------------------------
